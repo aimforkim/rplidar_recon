@@ -30,6 +30,13 @@ endforeach()
 pluginlib_export_plugin_description_file(filters laser_filters_plugins.xml)
 ament_auto_package(INSTALL_TO_SHARE examples)
 
+## Mark executable scripts (Python etc.) for installation
+## in contrast to setup.py, you can choose the destination
+# catkin_install_python(PROGRAMS
+#   scripts/my_python_script
+#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
+
 ##############################################################################
 # Test
 ##############################################################################
