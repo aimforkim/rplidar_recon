@@ -12,7 +12,11 @@ ament_auto_find_build_dependencies()
 # Build
 ##############################################################################
 
-ament_auto_add_library(laser_scan_filters SHARED src/laser_scan_filters.cpp)
+ament_auto_add_library(laser_scan_filters SHARED src/laser_scan_filters.cpp src/scan_to_scan_filter_chain.cpp src/scan_to_cloud_filter_chain.cpp src/generic_laser_filter_node.cpp)
+
+# add_executable(laser_scan_filters src/laser_scan_filters.cpp src/scan_to_scan_filter_chain.cpp src/scan_to_cloud_filter_chain.cpp src/generic_laser_filter_node.cpp)
+
+target_link_libraries(laser_scan_filters ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 set(FILTER_CHAINS
     scan_to_cloud_filter_chain

@@ -160,8 +160,8 @@ RUN ["/bin/bash", "-c", "git clone https://github.com/Slamtec/rplidar_ros"]
 WORKDIR /dev_ws/src
 RUN ["/bin/bash", "-c", "git clone https://github.com/ros-perception/laser_assembler"]
 
-WORKDIR /dev_ws/src
-RUN ["/bin/bash", "-c", "git clone https://github.com/ros-perception/laser_filters"]
+#WORKDIR /dev_ws/src
+#RUN ["/bin/bash", "-c", "git clone https://github.com/ros-perception/laser_filters"]
 
 # Bash final stage
 # ----------------------------------------

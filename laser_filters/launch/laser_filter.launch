@@ -1,10 +1,10 @@
+<!--launch>
+<node pkg="laser_filters" type="scan_to_scan_filter_chain" output="screen" name="laser_filter">
+      <remap from="scan" to="base_scan" />
+      <rosparam command="load" file="$(find laser_filters)/examples/shadow_filter_example.yaml" />
+</node>
+</launch-->
 <launch>
-  <node pkg="laser_filters" type="scan_to_cloud_filter_chain"
-      name="tilt_shadow_filter">
-    <rosparam command="load" file="$(find mypkg)/laserfilter.yaml" />
-    <param name="high_fidelity" value="true" />
-    <param name="target_frame" type="string" value="base_link" />
-    <remap from="scan" to="tilt_scan" />
-    <remap from="cloud_filtered" to="tilt_scan_cloud_filtered" />
-  </node>
+        <rosparam command="load" file="$(find laser_filters)/test/test_scan_filter_chain.yaml"/>
+        <test test-name="test_scan_filter_chain" pkg="laser_filters" type="test_scan_filter_chain"/>
 </launch>
