@@ -3,8 +3,8 @@ scan_filter_chain:
   type: laser_filters/ScanShadowsFilter
   params:
     min_angle: 10
-    max_angle: 170
-    neighbors: 20
+    max_angle: 90
+    neighbors: 30
     window: 1
 
 - name: dark_shadows

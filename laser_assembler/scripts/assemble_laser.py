@@ -11,7 +11,7 @@ rospy.wait_for_service("assemble_scans")
 try:
     assemble_scans = rospy.ServiceProxy('assemble_scans', AssembleScans)
 
-    resp = assemble_scans(rospy.Time(0, 0), rospy.get_rostime())
+    resp = assemble_scans(rospy.Time(5, 0), rospy.get_rostime())
     print("Got cloud with %u points" % len(resp.cloud.points))
 
 except rospy.ServiceException as e:

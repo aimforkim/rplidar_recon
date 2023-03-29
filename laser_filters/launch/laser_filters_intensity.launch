@@ -1,0 +1,11 @@
+<launch>
+  <include file="$(find rplidar_ros)/launch/rplidar.launch" />
+
+<!-- Tf publisher that links camera link to tool0 -->
+<node pkg="tf" type="static_transform_publisher" name="lidar_link_broadcaster" args="0 0 0 0 0 0 1 map laser 100" />
+
+<node pkg="laser_filters" type="scan_to_scan_filter_chain" output="screen" name="laser_filter">
+      <remap from="base_scan" to="scan" />
+      <rosparam command = "load" file="$(find laser_filters)/test/filter_range.yaml"/>
+</node>
+</launch>

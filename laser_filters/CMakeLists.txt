@@ -97,6 +97,10 @@ if (CATKIN_ENABLE_TESTING)
   target_link_libraries(test_scan_shadows_filter laser_scan_filters ${catkin_LIBRARIES} ${rostest_LIBRARIES})
 endif()
 
+# Install launch files
+install(DIRECTORY launch/
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+    )
 ##############################################################################
 # Install
 ##############################################################################
