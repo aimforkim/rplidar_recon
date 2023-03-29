@@ -38,11 +38,11 @@
 #define LASER_SCAN_ANGULAR_BOUNDS_FILTER_IN_PLACE_H
 
 #include <filters/filter_base.hpp>
-#include <sensor_msgs/msg/laser_scan.hpp>
+#include <sensor_msgs/LaserScan.h>
 
 namespace laser_filters
 {
-  class LaserScanAngularBoundsFilterInPlace : public filters::FilterBase<sensor_msgs::msg::LaserScan>
+  class LaserScanAngularBoundsFilterInPlace : public filters::FilterBase<sensor_msgs::LaserScan>
   {
     public:
       double lower_angle_;
@@ -53,9 +53,8 @@ namespace laser_filters
         lower_angle_ = 0;
         upper_angle_ = 0;
 
-        if (!getParam("lower_angle", lower_angle_) || !getParam("upper_angle", upper_angle_))
-        {
-          RCLCPP_ERROR(logging_interface_->get_logger(), "Both the lower_angle and upper_angle parameters must be set to use this filter.");
+        if(!getParam("lower_angle", lower_angle_) || !getParam("upper_angle", upper_angle_)){
+          ROS_ERROR("Both the lower_angle and upper_angle parameters must be set to use this filter.");
           return false;
         }
 
@@ -64,7 +63,7 @@ namespace laser_filters
 
       virtual ~LaserScanAngularBoundsFilterInPlace(){}
 
-      bool update(const sensor_msgs::msg::LaserScan& input_scan, sensor_msgs::msg::LaserScan& filtered_scan){
+      bool update(const sensor_msgs::LaserScan& input_scan, sensor_msgs::LaserScan& filtered_scan){
         filtered_scan = input_scan; //copy entire message
 
         double current_angle = input_scan.angle_min;
@@ -81,7 +80,7 @@ namespace laser_filters
           current_angle += input_scan.angle_increment;
         }
 
-        RCLCPP_DEBUG(logging_interface_->get_logger(), "Filtered out %u points from the laser scan.", count);
+        ROS_DEBUG("Filtered out %u points from the laser scan.", count);
 
         return true;
 

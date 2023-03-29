@@ -39,8 +39,11 @@
 \brief LaserScanMaskFilter removes points on directions defined in a mask from a laser scan.
 **/
 
-#include "filters/filter_base.hpp"
-#include <sensor_msgs/msg/laser_scan.hpp>
+
+#include <filters/filter_base.hpp>
+#include "sensor_msgs/LaserScan.h"
+
+#include <XmlRpcException.h>
 
 #include <limits>
 #include <map>
@@ -50,42 +53,48 @@
 namespace laser_filters
 {
 
-class LaserScanMaskFilter : public filters::FilterBase<sensor_msgs::msg::LaserScan>
+class LaserScanMaskFilter : public filters::FilterBase<sensor_msgs::LaserScan>
 {
 public:
   std::map<std::string, std::vector<size_t> > masks_;
 
   bool configure()
   {
-    std::string key_masks = param_prefix_ + "masks";
-    for (auto i : params_interface_->get_parameter_overrides())
+    XmlRpc::XmlRpcValue config;
+    if (!getParam("masks", config))
     {
-      if (i.first.find(key_masks) == 0)
-      {
-        auto frame_id = i.first.substr(key_masks.size() + 1);
-        std::vector<double> values;
-        getParam("masks." + frame_id, values);
-        masks_[frame_id].clear();
-        for (size_t i = 0; i < values.size(); ++i)
-        {
-          size_t id = static_cast<int>(values[i]);
-          masks_[frame_id].push_back(id);
-        }
-        RCLCPP_INFO(
-            logging_interface_->get_logger(),
-            "LaserScanMaskFilter: %s: %d directions will be masked.",
-            frame_id.c_str(), (int)masks_[frame_id].size());
-      }
-    }
-
-    if (masks_.empty())
-    {
-      RCLCPP_ERROR(
-          logging_interface_->get_logger(),
-          "LaserScanMaskFilter: masks is not defined in the config.");
+      ROS_ERROR("LaserScanMaskFilter: masks is not defined in the config.");
       return false;
     }
-
+    if (config.getType() == XmlRpc::XmlRpcValue::TypeArray)
+    {
+      ROS_ERROR("LaserScanMaskFilter: masks must be an array of frame_ids with direction list.");
+      return false;
+    }
+    for (XmlRpc::XmlRpcValue::iterator it = config.begin();
+        it != config.end(); ++it)
+    {
+      if (it->second.getType() == XmlRpc::XmlRpcValue::TypeArray)
+      {
+        std::string frame_id = (std::string)(it->first);
+        masks_[frame_id] = std::vector<size_t>();
+        try
+        {
+          for (size_t i = 0; i < it->second.size(); ++i)
+          {
+            size_t id = static_cast<int>(it->second[i]);
+            masks_[frame_id].push_back(id);
+          }
+          ROS_INFO("LaserScanMaskFilter: %s: %d directions will be masked.",
+              frame_id.c_str(), (int)masks_[frame_id].size());
+        }
+        catch(XmlRpc::XmlRpcException &e)
+        {
+          ROS_ERROR("LaserScanMaskFilter: %s", e.getMessage().c_str());
+          return false;
+        }
+      }
+    }
     return true;
   }
 
@@ -93,14 +102,12 @@ public:
   {
   }
 
-  bool update(const sensor_msgs::msg::LaserScan& data_in, sensor_msgs::msg::LaserScan& data_out)
+  bool update(const sensor_msgs::LaserScan& data_in, sensor_msgs::LaserScan& data_out)
   {
     data_out = data_in;
     if (masks_.find(data_out.header.frame_id) == masks_.end())
     {
-      RCLCPP_WARN(
-          logging_interface_->get_logger(),
-          "LaserScanMaskFilter: frame_id %s is not registered.",
+      ROS_WARN("LaserScanMaskFilter: frame_id %s is not registered.",
           data_out.header.frame_id.c_str());
       return true;
     }

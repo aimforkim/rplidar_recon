@@ -27,106 +27,76 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/laser_scan.hpp>
 
-// TF
-#include <tf2_ros/transform_listener.h>
-#include "tf2_ros/message_filter.h"
-
-typedef tf2::TransformException TransformException;
-typedef tf2_ros::TransformListener TransformListener;
-
-#define NO_TIMER
-
+#include "ros/ros.h"
+#include "sensor_msgs/LaserScan.h"
 #include "message_filters/subscriber.h"
-#include "filters/filter_chain.hpp"
-
-using namespace std::chrono_literals;
+#include "tf/message_filter.h"
+#include "tf/transform_listener.h"
+#include <filters/filter_chain.hpp>
 
 class GenericLaserScanFilterNode
 {
 protected:
   // Our NodeHandle
-  rclcpp::Node::SharedPtr nh_;
+  ros::NodeHandle nh_;
 
   // Components for tf::MessageFilter
-  TransformListener tf_;
-  tf2_ros::Buffer buffer_;
-
-  message_filters::Subscriber<sensor_msgs::msg::LaserScan> scan_sub_;
-  tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan> tf_filter_;
+  tf::TransformListener tf_;
+  message_filters::Subscriber<sensor_msgs::LaserScan> scan_sub_;
+  tf::MessageFilter<sensor_msgs::LaserScan> tf_filter_;
 
   // Filter Chain
-  filters::FilterChain<sensor_msgs::msg::LaserScan> filter_chain_;
+  filters::FilterChain<sensor_msgs::LaserScan> filter_chain_;
 
   // Components for publishing
-  sensor_msgs::msg::LaserScan msg_;
-  rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr output_pub_;
+  sensor_msgs::LaserScan msg_;
+  ros::Publisher output_pub_;
 
-  rclcpp::TimerBase::SharedPtr deprecation_timer_;
-
-private:
-  void foo(const sensor_msgs::msg::LaserScan::SharedPtr msg)
-  {
-  }
+  ros::Timer deprecation_timer_;
 
 public:
   // Constructor
-  GenericLaserScanFilterNode(rclcpp::Node::SharedPtr nh)
-      : nh_(nh),
-        tf_(buffer_),
-        buffer_(nh_->get_clock()),
-        scan_sub_(nh_, "scan", rmw_qos_profile_sensor_data),
-        tf_filter_(scan_sub_, buffer_, "base_link", 50, nh_),
-        filter_chain_("sensor_msgs::msg::LaserScan")
+  GenericLaserScanFilterNode() :
+    scan_sub_(nh_, "scan_in", 50),
+    tf_filter_(scan_sub_, tf_, "base_link", 50),
+    filter_chain_("sensor_msgs::LaserScan")
   {
     // Configure filter chain
-    filter_chain_.configure("", nh_->get_node_logging_interface(), nh_->get_node_parameters_interface());
-
+    filter_chain_.configure("");
+    
     // Setup tf::MessageFilter for input
-    tf_filter_.registerCallback(std::bind(&GenericLaserScanFilterNode::callback, this, std::placeholders::_1));
-    tf_filter_.setTolerance(0.03s);
-
+    tf_filter_.registerCallback(boost::bind(&GenericLaserScanFilterNode::callback, this, boost::placeholders::_1));
+    tf_filter_.setTolerance(ros::Duration(0.03));
+    
     // Advertise output
-    output_pub_ = nh_->create_publisher<sensor_msgs::msg::LaserScan>("output", 1000);
+    output_pub_ = nh_.advertise<sensor_msgs::LaserScan>("output", 1000);
 
-    std::function<void(const sensor_msgs::msg::LaserScan::SharedPtr)> standard_callback =
-      std::bind(&GenericLaserScanFilterNode::foo, this, std::placeholders::_1);
-    nh_->create_subscription<sensor_msgs::msg::LaserScan>("scan", rclcpp::SensorDataQoS(), standard_callback);
-
-    deprecation_timer_ = nh_->create_wall_timer(5s, [this]() {
-      RCLCPP_WARN(
-          nh_->get_logger(),
-          "'generic_laser_filter_node' has been deprecated. "
-          "Please switch to 'scan_to_scan_filter_chain'.");
-    });
+    deprecation_timer_ = nh_.createTimer(ros::Duration(5.0), [this](auto& event){ deprecation_warn(event); });
+  }
+  
+  void deprecation_warn(const ros::TimerEvent& e)
+  {
+    ROS_WARN("'generic_laser_filter_node' has been deprecated.  Please switch to 'scan_to_scan_filter_chain'.");
   }
 
   // Callback
-  void callback(const std::shared_ptr<const sensor_msgs::msg::LaserScan>& msg_in)
+  void callback(const sensor_msgs::LaserScan::ConstPtr& msg_in)
   {
     // Run the filter chain
     filter_chain_.update (*msg_in, msg_);
     
     // Publish the output
-    output_pub_->publish(msg_);
+    output_pub_.publish(msg_);
   }
 };
 
 int main(int argc, char **argv)
 {
-  rclcpp::init(argc, argv);
-  auto nh = rclcpp::Node::make_shared("scan_filter_node");
-  GenericLaserScanFilterNode t(nh);
-
-  rclcpp::WallRate loop_rate(200);
-  while (rclcpp::ok()) {
-
-    rclcpp::spin_some(nh);
-    loop_rate.sleep();
-
-  }
-
+  ros::init(argc, argv, "scan_filter_node");
+  
+  GenericLaserScanFilterNode t;
+  ros::spin();
+  
   return 0;
 }

@@ -29,20 +29,18 @@
 
 #include <gtest/gtest.h>
 #include <filters/filter_chain.hpp>
-#include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/laser_scan.hpp>
+#include <ros/ros.h>
+#include "sensor_msgs/LaserScan.h"
 #include <pluginlib/class_loader.hpp>
 
-using sensor_msgs::msg::LaserScan;
 
-LaserScan gen_msg(rclcpp::Time stamp)
-{
-  LaserScan msg;
+sensor_msgs::LaserScan gen_msg(){
+  sensor_msgs::LaserScan msg;
 
   float temp[] = {1.0, 0.1, 1.0, 1.0, 1.0, 9.0, 1.0, 1.0, 1.0, 2.3};
   std::vector<float> v1 (temp, temp + sizeof(temp) / sizeof(float));
 
-  msg.header.stamp = stamp;
+  msg.header.stamp = ros::Time::now();
   msg.header.frame_id = "laser";
   msg.angle_min = -.5;
   msg.angle_max = .5;
@@ -73,19 +71,13 @@ void expect_ranges_eq(const std::vector<float> &a, const std::vector<float> &b) 
 
 TEST(ScanToScanFilterChain, BadConfiguration)
 {
-  filters::FilterChain<LaserScan> filter_chain_("sensor_msgs::msg::LaserScan");
+  filters::FilterChain<sensor_msgs::LaserScan> filter_chain_("sensor_msgs::LaserScan");
 
   try
   {
-
-    rclcpp::Node::SharedPtr node =
-        std::make_shared<rclcpp::Node>("bad_filter_chain");
-    filter_chain_.configure(
-        "",
-        node->get_node_logging_interface(),
-        node->get_node_parameters_interface());
+    filter_chain_.configure("bad_filter_chain");
   }
-  catch (const pluginlib::LibraryLoadException &)
+  catch(pluginlib::LibraryLoadException)
   {
     EXPECT_FALSE(false);
   }
@@ -95,21 +87,16 @@ TEST(ScanToScanFilterChain, BadConfiguration)
 
 TEST(ScanToScanFilterChain, IntensityFilter)
 {
-  LaserScan msg_in, msg_out, expected_msg;
+  sensor_msgs::LaserScan msg_in, msg_out, expected_msg;
   float nanval = std::numeric_limits<float>::quiet_NaN();
   float temp[] = {1.0, nanval, 1.0, 1.0, 1.0, nanval, 1.0, 1.0, 1.0, 2.3};
   std::vector<float> v1 (temp, temp + sizeof(temp) / sizeof(float));
   expected_msg.ranges = v1;
-  filters::FilterChain<LaserScan> filter_chain_("sensor_msgs::msg::LaserScan");
+  filters::FilterChain<sensor_msgs::LaserScan> filter_chain_("sensor_msgs::LaserScan");
 
-  rclcpp::Node::SharedPtr node =
-      std::make_shared<rclcpp::Node>("intensity_filter_chain");
-  EXPECT_TRUE(filter_chain_.configure(
-      "",
-      node->get_node_logging_interface(),
-      node->get_node_parameters_interface()));
+  EXPECT_TRUE(filter_chain_.configure("intensity_filter_chain"));
 
-  msg_in = gen_msg(node->now());
+  msg_in = gen_msg();
 
   EXPECT_TRUE(filter_chain_.update(msg_in, msg_out));
   expect_ranges_eq(msg_out.ranges, expected_msg.ranges);
@@ -119,20 +106,15 @@ TEST(ScanToScanFilterChain, IntensityFilter)
 
 TEST(ScanToScanFilterChain, InterpFilter)
 {
-  LaserScan msg_in, msg_out, expected_msg;
+  sensor_msgs::LaserScan msg_in, msg_out, expected_msg;
   float temp[] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
   std::vector<float> v1 (temp, temp + sizeof(temp) / sizeof(float));
   expected_msg.ranges = v1;
-  filters::FilterChain<LaserScan> filter_chain_("sensor_msgs::msg::LaserScan");
+  filters::FilterChain<sensor_msgs::LaserScan> filter_chain_("sensor_msgs::LaserScan");
 
-  rclcpp::Node::SharedPtr node =
-      std::make_shared<rclcpp::Node>("interp_filter_chain");
-  EXPECT_TRUE(filter_chain_.configure(
-      "",
-      node->get_node_logging_interface(),
-      node->get_node_parameters_interface()));
+  EXPECT_TRUE(filter_chain_.configure("interp_filter_chain"));
 
-  msg_in = gen_msg(node->now());
+  msg_in = gen_msg();
 
   EXPECT_TRUE(filter_chain_.update(msg_in, msg_out));
   
@@ -145,21 +127,16 @@ TEST(ScanToScanFilterChain, InterpFilter)
 
 TEST(ScanToScanFilterChain, ShadowFilter)
 {
-  LaserScan msg_in, msg_out, expected_msg;
+  sensor_msgs::LaserScan msg_in, msg_out, expected_msg;
   float nanval = std::numeric_limits<float>::quiet_NaN();
   float temp[] = {nanval, 0.1, nanval, 1.0, 1.0, nanval, 1.0, 1.0, 1.0, nanval};
   std::vector<float> v1 (temp, temp + sizeof(temp) / sizeof(float));
-  expected_msg.ranges = v1;
-  filters::FilterChain<LaserScan> filter_chain_("sensor_msgs::msg::LaserScan");
+  expected_msg.ranges = v1; 
+  filters::FilterChain<sensor_msgs::LaserScan> filter_chain_("sensor_msgs::LaserScan");
 
-  rclcpp::Node::SharedPtr node =
-      std::make_shared<rclcpp::Node>("shadow_filter_chain");
-  EXPECT_TRUE(filter_chain_.configure(
-      "",
-      node->get_node_logging_interface(),
-      node->get_node_parameters_interface()));
+  EXPECT_TRUE(filter_chain_.configure("shadow_filter_chain"));
 
-  msg_in = gen_msg(node->now());
+  msg_in = gen_msg();
 
   EXPECT_TRUE(filter_chain_.update(msg_in, msg_out));
 
@@ -170,27 +147,22 @@ TEST(ScanToScanFilterChain, ShadowFilter)
 
 TEST(ScanToScanFilterChain, ArrayFilter)
 {
-  LaserScan msg_in, msg_out, expected_msg;
+  sensor_msgs::LaserScan msg_in, msg_out, expected_msg;
   float temp[] = {1.0, 0.4, 1.0, 1.0, 1.0, 6.3333, 1.0, 1.0, 1.0, 1.8667};
   std::vector<float> v1 (temp, temp + sizeof(temp) / sizeof(float));
-  expected_msg.ranges = v1;
-  filters::FilterChain<LaserScan> filter_chain_("sensor_msgs::msg::LaserScan");
+  expected_msg.ranges = v1; 
+  filters::FilterChain<sensor_msgs::LaserScan> filter_chain_("sensor_msgs::LaserScan");
 
-  rclcpp::Node::SharedPtr node =
-      std::make_shared<rclcpp::Node>("array_filter_chain");
-  EXPECT_TRUE(filter_chain_.configure(
-      "",
-      node->get_node_logging_interface(),
-      node->get_node_parameters_interface()));
+  EXPECT_TRUE(filter_chain_.configure("array_filter_chain"));
 
-  msg_in = gen_msg(node->now());
-
+  msg_in = gen_msg();
+  
   EXPECT_TRUE(filter_chain_.update(msg_in, msg_out));
   float temp2[] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
   std::vector<float> v2 (temp2, temp2 + sizeof(temp2) / sizeof(float));
   msg_in.ranges = v2;
   EXPECT_TRUE(filter_chain_.update(msg_in, msg_out));
-  msg_in = gen_msg(node->now());
+  msg_in = gen_msg();
   EXPECT_TRUE(filter_chain_.update(msg_in, msg_out));
   
   for( int i=0; i<10; i++){
@@ -203,21 +175,16 @@ TEST(ScanToScanFilterChain, ArrayFilter)
 
 TEST(ScanToScanFilterChain, MaskFilter)
 {
-  LaserScan msg_in, msg_out, expected_msg;
+  sensor_msgs::LaserScan msg_in, msg_out, expected_msg;
   const float nanval = std::numeric_limits<float>::quiet_NaN();
   const float temp[] = {1.0, nanval, 1.0, 1.0, 1.0, nanval, 1.0, 1.0, 1.0, 2.3};
   const std::vector<float> v1 (temp, temp + sizeof(temp) / sizeof(float));
   expected_msg.ranges = v1;
-  filters::FilterChain<LaserScan> filter_chain_("sensor_msgs::msg::LaserScan");
+  filters::FilterChain<sensor_msgs::LaserScan> filter_chain_("sensor_msgs::LaserScan");
 
-  rclcpp::Node::SharedPtr node =
-      std::make_shared<rclcpp::Node>("mask_filter_chain");
-  EXPECT_TRUE(filter_chain_.configure(
-      "",
-      node->get_node_logging_interface(),
-      node->get_node_parameters_interface()));
+  EXPECT_TRUE(filter_chain_.configure("mask_filter_chain"));
 
-  msg_in = gen_msg(node->now());
+  msg_in = gen_msg();
 
   EXPECT_TRUE(filter_chain_.update(msg_in, msg_out));
 
@@ -229,6 +196,6 @@ TEST(ScanToScanFilterChain, MaskFilter)
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
-  rclcpp::init(argc, argv);
+  ros::init(argc, argv, "test_scan_to_scan_filter_chain");
   return RUN_ALL_TESTS();
 }

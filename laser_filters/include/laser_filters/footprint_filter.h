@@ -41,34 +41,27 @@ This is useful for ground plane extraction
 
 **/
 
-#include "filters/filter_base.hpp"
 
-#include <tf2/transform_datatypes.h>
-#include <tf2_ros/buffer.h>
-#include <tf2_ros/transform_listener.h>
-#include <sensor_msgs/msg/laser_scan.hpp>
-#include <sensor_msgs/msg/point_cloud2.hpp>
-#include <sensor_msgs/point_cloud2_iterator.hpp> // PointCloud2ConstIterator
-#include <geometry_msgs/msg/point32.hpp>
-#include <rclcpp_lifecycle/lifecycle_node.hpp>
-
-#include "laser_geometry/laser_geometry.hpp"
+#include <filters/filter_base.hpp>
+#include "sensor_msgs/LaserScan.h"
+#include "tf/transform_listener.h"
+#include "sensor_msgs/PointCloud.h"
+#include "ros/ros.h"
+#include "laser_geometry/laser_geometry.h"
 
 namespace laser_filters
 {
 
-class LaserScanFootprintFilter : public filters::FilterBase<sensor_msgs::msg::LaserScan>, public rclcpp_lifecycle::LifecycleNode
+class LaserScanFootprintFilter : public filters::FilterBase<sensor_msgs::LaserScan>
 {
 public:
-  LaserScanFootprintFilter()
-      : rclcpp_lifecycle::LifecycleNode("laser_scan_footprint_filter"), 
-        buffer_(get_clock()), tf_(buffer_), up_and_running_(false) {}
+  LaserScanFootprintFilter(): up_and_running_(false) {}
 
   bool configure()
   {
     if(!getParam("inscribed_radius", inscribed_radius_))
     {
-      RCLCPP_ERROR(get_logger(), "LaserScanFootprintFilter needs inscribed_radius to be set");
+      ROS_ERROR("LaserScanFootprintFilter needs inscribed_radius to be set");
       return false;
     }
     return true;
@@ -76,57 +69,39 @@ public:
 
   virtual ~LaserScanFootprintFilter()
   {
+
   }
 
-  bool update(const sensor_msgs::msg::LaserScan& input_scan, sensor_msgs::msg::LaserScan& filtered_scan)
+  bool update(const sensor_msgs::LaserScan& input_scan, sensor_msgs::LaserScan& filtered_scan)
   {
     filtered_scan = input_scan ;
-    sensor_msgs::msg::PointCloud2 laser_cloud;
+    sensor_msgs::PointCloud laser_cloud;
 
     try{
-      projector_.transformLaserScanToPointCloud("base_link", input_scan, laser_cloud, buffer_);
+      projector_.transformLaserScanToPointCloud("base_link", input_scan, laser_cloud, tf_);
     }
-    catch (tf2::TransformException &ex)
-    {
-      rclcpp::Clock steady_clock(RCL_STEADY_TIME);
-      if (up_and_running_)
-      {
-        RCLCPP_WARN_THROTTLE(get_logger(), steady_clock, 1, "Dropping Scan: Transform unavailable %s", ex.what());
+    catch(tf::TransformException& ex){
+      if(up_and_running_){
+        ROS_WARN_THROTTLE(1, "Dropping Scan: Transform unavailable %s", ex.what());
       }
-      else
-      {
-        RCLCPP_INFO_THROTTLE(get_logger(), steady_clock, .3, "Ignoring Scan: Waiting for TF");
+      else {
+        ROS_INFO_THROTTLE(.3, "Ignoring Scan: Waiting for TF");
       }
       return false;
     }
 
-    sensor_msgs::PointCloud2ConstIterator<int> iter_i(laser_cloud, "index");
-    sensor_msgs::PointCloud2ConstIterator<float> iter_x(laser_cloud, "x");
-    sensor_msgs::PointCloud2ConstIterator<float> iter_y(laser_cloud, "y");
-    sensor_msgs::PointCloud2ConstIterator<float> iter_z(laser_cloud, "z");
+    int c_idx = indexChannel(laser_cloud);
 
-    if (!(iter_i != iter_i.end()))
-    {
-      RCLCPP_ERROR(get_logger(), "We need an index channel to be able to filter out the footprint");
+    if (c_idx == -1 || laser_cloud.channels[c_idx].values.size () == 0){
+      ROS_ERROR("We need an index channel to be able to filter out the footprint");
       return false;
     }
 
-    for (;
-         iter_x != iter_x.end() &&
-         iter_y != iter_y.end() &&
-         iter_z != iter_z.end() &&
-         iter_i != iter_i.end();
-         ++iter_x, ++iter_y, ++iter_z, ++iter_i)
+    for (unsigned int i=0; i < laser_cloud.points.size(); i++)
     {
-
-      geometry_msgs::msg::Point32 point;
-      point.x = *iter_x;
-      point.y = *iter_y;
-      point.z = *iter_z;
-
-      if (inFootprint(point))
-      {
-        filtered_scan.ranges[*iter_i] = std::numeric_limits<float>::quiet_NaN();
+      if (inFootprint(laser_cloud.points[i])){
+        int index = laser_cloud.channels[c_idx].values[i];
+        filtered_scan.ranges[index] = std::numeric_limits<float>::quiet_NaN();
       }
     }
 
@@ -134,16 +109,27 @@ public:
     return true;
   }
 
-  bool inFootprint(const geometry_msgs::msg::Point32 &scan_pt)
-  {
-    if (scan_pt.x < -1.0 * inscribed_radius_ || scan_pt.x > inscribed_radius_ || scan_pt.y < -1.0 * inscribed_radius_ || scan_pt.y > inscribed_radius_)
+  int indexChannel(const sensor_msgs::PointCloud& scan_cloud){
+      int c_idx = -1;
+      for (unsigned int d = 0; d < scan_cloud.channels.size (); d++)
+      {
+        if (scan_cloud.channels[d].name == "index")
+        {
+          c_idx = d;
+          break;
+        }
+      }
+      return c_idx;
+  }
+
+  bool inFootprint(const geometry_msgs::Point32& scan_pt){
+    if(scan_pt.x < -1.0 * inscribed_radius_ || scan_pt.x > inscribed_radius_ || scan_pt.y < -1.0 * inscribed_radius_ || scan_pt.y > inscribed_radius_)
       return false;
     return true;
   }
 
 private:
-  tf2_ros::Buffer buffer_;
-  tf2_ros::TransformListener tf_;
+  tf::TransformListener tf_;
   laser_geometry::LaserProjection projector_;
   double inscribed_radius_;
   bool up_and_running_;
