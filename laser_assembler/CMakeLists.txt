@@ -99,6 +99,7 @@ install(TARGETS
 
 catkin_install_python(PROGRAMS
   scripts/assemble_laser.py
+  scripts/laser2pc.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
