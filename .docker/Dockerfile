@@ -157,8 +157,8 @@ FROM base as rplidar
 WORKDIR /dev_ws/src
 RUN ["/bin/bash", "-c", "git clone https://github.com/Slamtec/rplidar_ros"]
 
-WORKDIR /dev_ws/src
-RUN ["/bin/bash", "-c", "git clone https://github.com/ros-perception/perception_pcl"]
+# WORKDIR /dev_ws/src
+# RUN ["/bin/bash", "-c", "git clone -b kinetic-devel https://github.com/ros-perception/perception_pcl"]
 
 # Bash final stage
 # ----------------------------------------
