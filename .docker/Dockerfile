@@ -94,7 +94,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends\
     ros-$ROSDISTRO-rqt-py-common \
     python3-matplotlib \
     # pcl ros
-    ros-$ROSDISTRO-pcl-ros \
+    ros-$ROSDISTRO-perception-pcl \
     # roslibpy
     ros-$ROS_DISTRO-rosbridge-suite \
     && apt-get clean \
@@ -157,8 +157,8 @@ RUN git clone https://github.com/rjwb1/realsense-ros.git
 FROM base as rplidar
 
 # Intall pcl tools
-RUN apt-get update && apt-get install -y --no-install-recommends\
-    pcl-tools
+# RUN apt-get update && apt-get install -y --no-install-recommends\
+#     pcl-tools
 
 WORKDIR /dev_ws/src
 RUN ["/bin/bash", "-c", "git clone https://github.com/Slamtec/rplidar_ros"]
