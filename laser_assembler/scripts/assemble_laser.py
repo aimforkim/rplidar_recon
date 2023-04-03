@@ -16,7 +16,7 @@ def main():
 
     while True:
         try:
-            resp = assemble_scans(rospy.Time(5, 0), rospy.get_rostime())
+            resp = assemble_scans(rospy.Time(0, 0), rospy.get_rostime())
             print("Got cloud with %u points" % len(resp.cloud.points))
             pub.publish(resp.cloud)
         except rospy.ServiceException as e:

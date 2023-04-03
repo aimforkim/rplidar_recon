@@ -93,6 +93,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends\
     ros-$ROSDISTRO-rqt-gui-py \
     ros-$ROSDISTRO-rqt-py-common \
     python3-matplotlib \
+    # pcl ros
+    ros-$ROSDISTRO-pcl-ros \
     # roslibpy
     ros-$ROS_DISTRO-rosbridge-suite \
     && apt-get clean \
