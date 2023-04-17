@@ -2,15 +2,15 @@ scan_filter_chain:
 - name: angle
   type: laser_filters/LaserScanAngularBoundsFilter
   params:
-    lower_angle: 0.78
-    upper_angle: 2.18
+    lower_angle: 1.04
+    upper_angle: 2.10
 
 - name: box_filter
   type: laser_filters/LaserScanRangeFilter
   params:
   # basically a distance filter
     lower_threshold: 0.05
-    upper_threshold: 1.0
+    upper_threshold: 0.9
 
 - name: speckle_filter
   type: laser_filters/LaserScanSpeckleFilter
