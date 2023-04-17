@@ -5,10 +5,9 @@ import rospy
 from moveit_commander.conversions import list_to_pose
 
 from move_group_utils.move_group_utils import (MoveGroupUtils,
-                                               publish_trajectory_markers,
-                                               poses_list_from_yaml)
+                                               poses_list_from_yaml,
+                                               publish_trajectory_markers)
 from pilz_robot_program.pilz_robot_program import Lin, Ptp, Sequence
-
 
 home = (0.0, -pi/2.0, pi/2.0, 0.0, pi/2.0, -pi/2)
 
@@ -24,14 +23,7 @@ def robot_program():
 
     # create pose mgs list from yaml
     poses_list = poses_list_from_yaml(
-        '/dev_ws/src/ur10e_examples/toolpaths/test.yaml')
-
-    # # alternative poses from ros param server
-    # if rospy.has_param('gh_poses'):
-    #     poses_list = rospy.get_param('gh_poses')
-    # else:
-    #     rospy.logerr('No poses found on ros param server')
-    #     return
+        '/dev_ws/src/ur10e_examples/toolpaths/rplidar_scan.yaml')
 
     poses = [list_to_pose(pose) for pose in poses_list]
 

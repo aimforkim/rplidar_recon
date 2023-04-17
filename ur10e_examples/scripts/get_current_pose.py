@@ -6,6 +6,7 @@ from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion
 from moveit_msgs.msg import CollisionObject
 from shape_msgs.msg import SolidPrimitive
 from std_msgs.msg import Header
+
 from move_group_utils.move_group_utils import MoveGroupUtils
 
 

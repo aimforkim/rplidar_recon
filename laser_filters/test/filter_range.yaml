@@ -10,7 +10,7 @@ scan_filter_chain:
   params:
   # basically a distance filter
     lower_threshold: 0.05
-    upper_threshold: 0.9
+    upper_threshold: 1.4
 
 - name: speckle_filter
   type: laser_filters/LaserScanSpeckleFilter
