@@ -4,12 +4,12 @@
     <include file="$(find ur10e_moveit_config)/launch/demo.launch" />
     <include file= "$(find move_group_utils)/launch/mgu_services.launch"/>   
     <!-- Tf publisher that links camera link to tool0 -->
-    <node pkg="tf" type="static_transform_publisher" name="camera_link_broadcaster" args="0 0 0.045 0.5 -0.5 0.5 0.5 tool0 camera_link 100" />
+    <!--node pkg="tf" type="static_transform_publisher" name="camera_link_broadcaster" args="0 0 0.045 0.5 -0.5 0.5 0.5 tool0 camera_link 100" /-->
     <node name="toolpath" pkg="ur10e_examples" type="toolpath_test.py" output="screen"/>  
 
     <include file="$(find rplidar_ros)/launch/rplidar.launch" />
     <!-- Tf publisher that camera link to laser -->
-    <node pkg="tf" type="static_transform_publisher" name="lidar_link_broadcaster" args="0 0 0.045 0.5 -0.5 0.5 0.5 camera_link laser 100" />
+    <node pkg="tf" type="static_transform_publisher" name="lidar_link_broadcaster" args="0 0 0.045 0.5 -0.5 0.5 0.5 tool0 laser 100" />
     <node pkg="laser_filters" type="scan_to_scan_filter_chain" output="screen" name="laser_filter">
         <remap from="base_scan" to="scan" />
         <rosparam command = "load" file="$(find laser_filters)/test/filter_range.yaml"/>
