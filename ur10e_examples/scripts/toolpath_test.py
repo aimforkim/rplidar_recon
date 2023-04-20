@@ -17,7 +17,7 @@ tcp_pose = Pose(position=Point(0.0, 0.0, 0.045),
                 orientation=Quaternion(0, 0, 0, 1))
 size = [0.042, 0.042, 0.023]
 
-vel = 0.2
+vel = 0.1
 acc = 0.1
 
 

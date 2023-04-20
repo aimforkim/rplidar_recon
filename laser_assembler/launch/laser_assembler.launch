@@ -4,7 +4,7 @@
 <remap from="scan" to="scan_filtered"/>
 <!--remap from="cloud" to="/camera/depth_registered/points"/-->
 <param name="max_scans" type="int" value="400" />
-<param name="fixed_frame" type="string" value="laser" />
+<param name="fixed_frame" type="string" value="base_link" />
  </node>
 <!-- Tf publisher that links camera link to tool0 -->
 <!--node pkg="tf" type="static_transform_publisher" name="camera_link_broadcaster" args="0 0 0.045 0.5 -0.5 0.5 0.5 tool0 camera_link 100" /-->
